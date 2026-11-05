@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CAM_HOLD = os.path.join(HERE, "cam_hold.py")
 SIZE = 5242880
 BS, COUNT = 4096, SIZE // 4096
-NET_PORT = 9999
+NET_PORT = 9999  # overridden by --port
 
 
 def detect_port(ip, prefer=None):
@@ -27,6 +27,7 @@ def detect_port(ip, prefer=None):
         try:
             socket.create_connection((ip, port), timeout=2).close()
             print(f"telnet : {ip}:{port} OPEN")
+            time.sleep(1.2)   # the camera shell needs a moment between two sessions
             return port
         except OSError:
             continue
@@ -36,12 +37,13 @@ def detect_port(ip, prefer=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cam", default=os.environ.get("CAM_HOST", "192.168.1.50"))
-    ap.add_argument("--port", type=int)
-    ap.add_argument("--telnet-port", type=int)
+    ap.add_argument("--port", type=int, help="data port on the camera (default: automatic)")
+    ap.add_argument("--telnet-port", type=int, help="camera root shell port (default: autodetect 24/23)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     tport = detect_port(args.cam, args.telnet_port)
-    net = args.port or NET_PORT
+    net = args.port or (9900 + os.getpid() % 90)   # unique per run: a stale
+                                                # listener would accept but stay silent
     if os.path.exists(args.out) and not os.environ.get("FORCE"):
         raise SystemExit(f"{args.out} existe déjà (FORCE=1 pour écraser)")
 
@@ -51,24 +53,52 @@ def main():
     cmd = (f"md5sum /usr/share/VERSION /usr/share/BUNDLE; grep mtd7 /proc/mtd; "
            f"nc -l -p {net} < /dev/mtd7; dd if=/dev/mtd7 bs={BS} count={COUNT} "
            f"2>/dev/null | md5sum; echo DUMP_DONE")
+    logf = args.out + ".camlog"
+    log = open(logf, "w")
     p = subprocess.Popen([sys.executable, CAM_HOLD, cmd, "DUMP_DONE", "360"],
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                         text=True, env=env)
-    time.sleep(2.5)
+                         stdout=log, stderr=subprocess.STDOUT, env=env)
+    # the camera starts its listener only after a few shell commands: retry until
+    # it accepts, instead of assuming a fixed delay.
+    time.sleep(5.0)
     h = hashlib.md5()
     n = 0
     t0 = time.time()
-    s = socket.create_connection((args.cam, net), timeout=15)
+    s = None
+    for _ in range(20):
+        try:
+            s = socket.create_connection((args.cam, net), timeout=5)
+            break
+        except OSError:
+            time.sleep(0.5)
+    if s is None:
+        raise SystemExit("camera listener never accepted on port %d" % net)
+    s.settimeout(8)
+    # Read exactly SIZE bytes then close: busybox `nc -l` may not close the
+    # connection on its own once the file is exhausted, so waiting for EOF can
+    # deadlock the session (and the camera-side md5 never gets printed).
+    # Tolerate short stalls: the SPI flash read can pause while the camera does
+    # other work, so a socket timeout is not the end of the transfer.
+    stall = 0
     with open(args.out + ".part", "wb") as fh:
-        while True:
-            b = s.recv(65536)
+        while n < SIZE:
+            try:
+                b = s.recv(min(65536, SIZE - n))
+            except socket.timeout:
+                stall += 1
+                if stall > 12:
+                    break
+                continue
             if not b:
                 break
+            stall = 0
             fh.write(b)
             h.update(b)
             n += len(b)
+            if n % (512 * 1024) == 0:
+                print("   ... %d / %d bytes" % (n, SIZE))
     s.close()
     dt = time.time() - t0
+    log.close()
     out, _ = p.communicate()
     out = (out or "").replace("\r", "\n")
     cam_md5 = None

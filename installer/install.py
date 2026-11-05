@@ -55,15 +55,18 @@ def md5(path):
     return h.hexdigest()
 
 
+SHIPPED = [
+    "sbin/lsc_onvif",
+    "sbin/ptzd",
+    "sbin/ptzd-supervise.sh",
+    "share/lsc/lsc_boot.sh",
+]
+GENERATED = ["share/lsc/_ak39_factory.ini"]
+
+
 def layer_files():
-    """Our canonical layer: (path relative to the camera root)."""
-    return [
-        "sbin/lsc_onvif",
-        "sbin/ptzd",
-        "sbin/ptzd-supervise.sh",
-        "share/lsc/lsc_boot.sh",
-        "share/lsc/_ak39_factory.ini",
-    ]
+    """Our canonical layer, as paths relative to the camera root."""
+    return SHIPPED + GENERATED
 
 
 def check_layer():
@@ -77,7 +80,7 @@ def check_layer():
                 h, p = line.split(None, 1)
                 sums[p.strip()] = h
     ok = True
-    for rel in layer_files():
+    for rel in SHIPPED:
         p = os.path.join(LAYER_DIR, rel)
         if not os.path.exists(p):
             fail("missing layer file: %s" % rel)
@@ -151,7 +154,7 @@ def main():
         print("   cached dump reused: %s" % raw)
     else:
         if sh([PY, os.path.join(HERE, "dump_app.py"), "--cam", a.cam,
-               "--port", str(a.port), "--out", raw]) != 0:
+               "--telnet-port", str(a.port), "--out", raw]) != 0:
             fail("dump failed")
     if os.path.getsize(raw) != PART_SIZE:
         fail("unexpected dump size: %d bytes" % os.path.getsize(raw))
@@ -173,13 +176,25 @@ def main():
     print("== [4/7] build: camera firmware + our layer ==")
     write_marker(camera_marker(a.cam, a.port), a.cam)
     out = os.path.join(work, "app_install.sqsh4")
-    cmd = [PY, os.path.join(HERE, "build_app.py"), "--name", a.cam,
-           "--base", tree, "--version", version, "--out", out]
-    if sh(cmd) != 0:
-        fail("build failed")
-    if os.path.getsize(out) > PART_SIZE:
-        print("   image too big, retrying with a larger squashfs block")
-        if sh(cmd + ["--block", "262144"]) != 0:
+    base_cmd = [PY, os.path.join(HERE, "build_app.py"), "--name", a.cam,
+                "--base", tree, "--version", version, "--out", out]
+
+    def build(block=None):
+        cmd = list(base_cmd)
+        if block:
+            cmd += ["--block", block]
+        return sh(cmd)
+
+    # A stock application partition is close to full on some builds: if the
+    # default 128 K squashfs block does not fit, retry with 256 K (less overhead).
+    ok = build() == 0 and os.path.getsize(out) <= PART_SIZE
+    if not ok:
+        print("   does not fit with -b 131072, retrying with -b 262144")
+        try:
+            os.remove(out)
+        except OSError:
+            pass
+        if build("262144") != 0:
             fail("build failed (block 262144)")
     size = os.path.getsize(out)
     print("   image: %s (%d bytes, %d free of %d)"
