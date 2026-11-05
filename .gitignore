@@ -1,0 +1,17 @@
+# local build artefacts
+build/
+*.o
+*.bin
+dumps/
+# keep prebuilt ARM binaries in bin/ (they are part of the release)
+!bin/*
+
+# secrets: never commit these
+secrets/
+*.local
+wifi.conf
+layer/share/lsc/_ak39_factory.ini
+__pycache__/
+*.pyc
+src/onvif/lsc_onvif
+src/onvif/lsc_onvif_host

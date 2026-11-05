@@ -1,0 +1,24 @@
+# Example: one LSC PTZ camera in Frigate, local video + local ONVIF PTZ.
+# Adapt the address and the credentials (the camera uses admin/admin).
+cameras:
+  lsc_cam:
+    ffmpeg:
+      inputs:
+        - path: rtsp://192.168.1.50:554/main_ch
+          roles: [detect, record]
+    detect:
+      width: 640
+      height: 360
+    objects:
+      track: [person]
+    record:
+      enabled: true
+    onvif:
+      host: 192.168.1.50
+      port: 8080
+      user: admin
+      password: admin
+      autotracking:
+        enabled: true
+        return_preset: level      # NEVER `home`: that is the folded position
+        timeout: 10

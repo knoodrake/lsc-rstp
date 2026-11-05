@@ -1,0 +1,4 @@
+# No third-party Python packages: the installer only uses the standard library.
+# System dependency (for the card-free bake): squashfs-tools
+#   Debian/Ubuntu: sudo apt install squashfs-tools
+#   Fedora:        sudo dnf install squashfs-tools

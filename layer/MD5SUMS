@@ -1,0 +1,4 @@
+f6fa509488a93d797231e911a76f3a6e  sbin/lsc_onvif
+2013c767489dd78b283876f36d897efd  sbin/ptzd
+47570bbb5a128c1b11fb65155085dd0d  sbin/ptzd-supervise.sh
+0d0ae9bb50c2637c4497598e7c89ee1e  share/lsc/lsc_boot.sh

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Wrapper the vendor firmware runs from the SD card when it enters AP mode.
+# It simply hands over to our bootstrap script.
+mkdir -p /mnt/logs 2>/dev/null
+echo "$(date) hostapd wrapper -> hack.sh" >> /mnt/logs/hackE.log 2>/dev/null
+if [ -f /mnt/hack.sh ]; then
+  /bin/sh /mnt/hack.sh >> /mnt/logs/hackE.log 2>&1
+fi
+exit 0
