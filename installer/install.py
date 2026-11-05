@@ -230,8 +230,9 @@ def main():
 
     print("== [6/7] flash mtd7 (erase + write + full md5 readback) ==")
     if sh([PY, os.path.join(HERE, "flash_app.py"), "--file", out,
-           "--cam", a.cam, "--port", str(a.port), "--apply"]) != 0:
-        fail("flash failed — see /tmp/flash_app.log on the camera")
+           "--cam", a.cam, "--port", str(a.port), "--apply",
+           "--wait", "300"]) != 0:
+        fail("flash failed or not confirmed — see /tmp/flash_app.log on the camera")
 
     if a.reboot:
         print("== [7/7] reboot ==")

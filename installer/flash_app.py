@@ -211,6 +211,28 @@ def launch(count, expected):
     return script, got
 
 
+def wait_result(timeout=240.0, step=5.0):
+    """Poll the camera until the flash script reports FLASH_OK / FLASH_FAIL.
+
+    Necessary before rebooting: the script erases and rewrites mtd7, which takes
+    tens of seconds. Rebooting early leaves a half-written partition.
+    """
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        cmd = ("ls -1 /tmp/FLASH_OK /tmp/FLASH_FAIL 2>/dev/null; "
+               "echo WR_DONE")
+        rc, out = cam(cmd, "WR_DONE", 30)
+        if "FLASH_OK" in out:
+            print("flash terminé : FLASH_OK (%.0fs)" % (time.time() - t0))
+            return True
+        if "FLASH_FAIL" in out:
+            print("flash ÉCHOUÉ : FLASH_FAIL")
+            return False
+        time.sleep(step)
+    print("flash non confirmé après %.0fs — ne pas rebooter encore" % timeout)
+    return None
+
+
 def status():
     cmd = ("echo LOG=; cat /tmp/flash_app.log 2>/dev/null | tail -25; "
            "echo OK=; ls -l /tmp/FLASH_OK /tmp/FLASH_FAIL 2>/dev/null; "
@@ -228,6 +250,8 @@ def main():
     ap.add_argument("--cam", default=os.environ.get("CAM_HOST", "192.168.1.50"))
     ap.add_argument("--port", type=int, help="port telnet (défaut : auto 23 puis 24)")
     ap.add_argument("--apply", action="store_true", help="sinon dry-run (préflight seul)")
+    ap.add_argument("--wait", type=float, default=240.0,
+                    help="attendre FLASH_OK avant de rendre la main (secondes, 0 = ne pas attendre)")
     ap.add_argument("--reboot", action="store_true", help="reboot -f après FLASH_OK")
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--only", choices=["md5", "script", "launch"],
@@ -301,8 +325,18 @@ def main():
     cmd = ("mv -f /tmp/flash_app.new /tmp/flash_app.sh; "
            "setsid sh /tmp/flash_app.sh >/dev/null 2>&1 & echo LAUNCHED")
     rc, out = cam(cmd, "LAUNCHED", 30)
-    print("flash lancé :", "LAUNCHED" in out)
-    print("suivre : remote_flash_app.py --status")
+    launched = "LAUNCHED" in out
+    print("flash lancé :", launched)
+    if not launched:
+        return 1
+    if args.wait:
+        ok = wait_result(args.wait)
+        if ok is False:
+            return 1
+        if ok is None:
+            return 2
+    else:
+        print("suivre : remote_flash_app.py --status")
     return 0
 
 
