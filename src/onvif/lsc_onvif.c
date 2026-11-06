@@ -635,6 +635,59 @@ struct preset { char name[32]; int pan, tilt; };
 static struct preset g_presets[16];
 static int g_npresets;
 
+static void preset_save(const char *name, int pan, int tilt);
+
+/* Persistance des presets : sans elle, "level" disparait a chaque reboot et
+ * Frigate retombe sur "home" (= position repliee) -> la camera regarde le
+ * plafond. Fichier minuscule dans /etc/config (jffs2), ecriture atomique. */
+#define PRESET_FILE "/etc/config/lsc_presets.txt"
+static int g_presets_loading;
+
+static void preset_store(void)
+{
+    char tmp[64];
+    FILE *f;
+    int i;
+    if (g_presets_loading) return;
+    snprintf(tmp, sizeof tmp, "%s.tmp", PRESET_FILE);
+    f = fopen(tmp, "w");
+    if (!f) return;
+    for (i = 0; i < g_npresets; i++)
+        fprintf(f, "%s %d %d\n", g_presets[i].name, g_presets[i].pan, g_presets[i].tilt);
+    fflush(f);
+    fsync(fileno(f));
+    fclose(f);
+    if (rename(tmp, PRESET_FILE) != 0) unlink(tmp);
+}
+
+static void preset_load(void)
+{
+    FILE *f = fopen(PRESET_FILE, "r");
+    char line[128], *tok;
+    int n = 0;
+    if (!f) return;
+    g_presets_loading = 1;
+    while (fgets(line, sizeof line, f)) {
+        char name[64];
+        int pan, tilt;
+        tok = strtok(line, " \t\r\n");
+        if (!tok) continue;
+        snprintf(name, sizeof name, "%s", tok);
+        tok = strtok(NULL, " \t\r\n");
+        if (!tok) continue;
+        pan = atoi(tok);
+        tok = strtok(NULL, " \t\r\n");
+        if (!tok) continue;
+        tilt = atoi(tok);
+        if (g_npresets >= (int)(sizeof g_presets / sizeof g_presets[0])) break;
+        preset_save(name, pan, tilt);
+        n++;
+    }
+    g_presets_loading = 0;
+    fclose(f);
+    logmsg("presets: %d restaure(s) depuis %s", n, PRESET_FILE);
+}
+
 static struct preset *preset_find(const char *name)
 {
     int i;
@@ -657,6 +710,7 @@ static void preset_save(const char *name, int pan, int tilt)
     }
     p->pan = pan;
     p->tilt = tilt;
+    preset_store();
 }
 
 static void preset_remove(const char *name)
@@ -667,6 +721,7 @@ static void preset_remove(const char *name)
             int k;
             for (k = i + 1; k < g_npresets; k++) g_presets[k - 1] = g_presets[k];
             g_npresets--;
+            preset_store();
             return;
         }
     }
@@ -1938,6 +1993,9 @@ int main(int argc, char **argv)
         if (iface_ip(g_iface, tmp, sizeof tmp) == 0) snprintf(g_ip, sizeof g_ip, "%s", tmp);
     }
     load_identity();
+    preset_load();
+    { struct preset *pl = preset_find("level");
+      if (pl) tilt_ref_note(pl->tilt); }
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGTERM, on_signal);

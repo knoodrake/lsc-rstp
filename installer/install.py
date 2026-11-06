@@ -97,9 +97,14 @@ def check_layer():
 def camera_marker(ip, port):
     """Read the camera's own factory marker so the baked fallback matches it."""
     out = ""
-    for _, txt in cam.run(["cat /etc/config/_ak39_factory.ini 2>/dev/null"],
-                          host=ip, port=port):
-        out += txt
+    for p in ([port, 23, 24] if port else [24, 23]):
+        try:
+            for _, txt in cam.run(["cat /etc/config/_ak39_factory.ini 2>/dev/null"],
+                                  host=ip, port=p):
+                out += txt
+            break
+        except OSError:
+            continue
     keys = ("ssid", "passphrase", "ip", "netmask", "gateway")
     vals = {}
     for line in out.splitlines():

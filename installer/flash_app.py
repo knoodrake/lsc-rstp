@@ -219,8 +219,10 @@ def wait_result(timeout=240.0, step=5.0):
     """
     t0 = time.time()
     while time.time() - t0 < timeout:
-        cmd = ("ls -1 /tmp/FLASH_OK /tmp/FLASH_FAIL 2>/dev/null; "
-               "echo WR_DONE")
+        # NB: la commande ne doit PAS contenir litteralement "FLASH_OK", sinon
+        # le telnet l'affiche en echo et la detection est immediate (bug vecu :
+        # reboot 3 s apres le lancement => mtd7 a moitie ecrite).
+        cmd = "ls /tmp/FLASH_* 2>/dev/null; echo WR_DONE"
         rc, out = cam(cmd, "WR_DONE", 30)
         if "FLASH_OK" in out:
             print("flash terminé : FLASH_OK (%.0fs)" % (time.time() - t0))
@@ -235,8 +237,8 @@ def wait_result(timeout=240.0, step=5.0):
 
 def status():
     cmd = ("echo LOG=; cat /tmp/flash_app.log 2>/dev/null | tail -25; "
-           "echo OK=; ls -l /tmp/FLASH_OK /tmp/FLASH_FAIL 2>/dev/null; "
-           "cat /tmp/FLASH_OK /tmp/FLASH_FAIL 2>/dev/null; echo ST_DONE")
+           "echo FILES=; ls -l /tmp/FLASH_* 2>/dev/null; "
+           "echo ST_DONE")
     rc, out = cam(cmd, "ST_DONE", 30)
     print(out.strip()[-2000:])
     ok = "FLASH_OK" in out
