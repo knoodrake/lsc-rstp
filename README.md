@@ -1,5 +1,7 @@
 # LSC PTZ → local RTSP + ONVIF PTZ (no cloud)
 
+[![checks](https://github.com/knoodrake/lsc-rstp/actions/workflows/ci.yml/badge.svg)](https://github.com/knoodrake/lsc-rstp/actions/workflows/ci.yml) · [MIT](LICENSE)
+
 Turn a cheap **LSC / Tuya PTZ camera** (Anyka AK3918EV330 · AK3168E platform) into a
 **fully local camera**: plain RTSP streams and a working **ONVIF PTZ** service, no Tuya
 cloud, no vendor app, no account. Built so that **Frigate** (and Home Assistant) can use

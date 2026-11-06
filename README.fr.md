@@ -1,5 +1,7 @@
 # LSC PTZ → RTSP local + PTZ ONVIF (sans cloud)
 
+[![checks](https://github.com/knoodrake/lsc-rstp/actions/workflows/ci.yml/badge.svg)](https://github.com/knoodrake/lsc-rstp/actions/workflows/ci.yml) · [MIT](LICENSE)
+
 Transformez une **caméra PTZ LSC / Tuya** bon marché (plateforme Anyka AK3918EV330 ·
 AK3168E) en **caméra 100 % locale** : flux RTSP bruts et un service **ONVIF PTZ**
 fonctionnel, sans cloud Tuya, sans appli vendeur, sans compte. Conçu pour que
