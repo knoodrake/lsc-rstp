@@ -24,7 +24,7 @@ PATTERNS = [
     ("MAC address",      re.compile(r"\b([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b")),
     ("home path",        re.compile(r"/home/[a-z][a-z0-9_-]+/")),
     ("long token",       re.compile(r"\b[0-9a-f]{40,}\b|\beyJ[A-Za-z0-9._-]{20,}")),
-    ("mqtt credentials", re.compile(r"mqtt://\S+:\S+@|frigate-local|frigate.*password|password.*frigate", re.I)),
+    ("mqtt credentials", re.compile(r"mqtt://\S+:\S+@|frigate.{0,10}password|password.{0,10}frigate", re.I)),
     ("e-mail",           re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b")),
     ("hostname",         re.compile(r"\bmainframe\d*\b|\bknoodrake\b", re.I)),
 ]
