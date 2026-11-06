@@ -38,9 +38,11 @@ Two things matter for autotracking on this hardware:
 1. **`return_preset` must be `level`, never `home`.**
    `home` is the folded privacy position (the head points at the ceiling), so the
    camera would come back to a useless view.
-2. **The `level` preset must exist and be fresh.**
-   Presets live in RAM: after a reboot, re-save `level` (see
-   `installer/verify.py --level x,y`).
+2. **The `level` preset must exist.**
+   Save it once with `installer/verify.py <ip> --level x,y`. It is written to
+   `/etc/config/lsc_presets.txt` and restored at every boot, and the camera also
+   *moves back to `level` by itself at startup* — so a camera that used to stare
+   at the ceiling after a power cycle now comes back to its watch position.
 
 With those two rules, and the tilt calibration described in
 [architecture](architecture.md), autotracking works: the camera tracks a moving person

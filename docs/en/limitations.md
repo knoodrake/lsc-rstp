@@ -15,11 +15,14 @@ forgot to fix.
    The DHCP client exists in the firmware but is not started in this mode: the camera
    needs a **static IP** written on the card.
 
-4. **Presets live in RAM.**
-   After a reboot the camera forgets `home` / `level`. A Frigate `return_preset` then
-   lands on a stale position. Re-save the preset after each reboot (or after changing
-   the mount) with:
-   `python3 installer/verify.py <ip> --level x,y`
+4. **Presets are persisted, and the camera returns to `level` at boot.**
+   Presets are written to `/etc/config/lsc_presets.txt` (jffs2, a few dozen bytes)
+   and restored at startup, so a Frigate `return_preset: level` keeps working after
+   every power cycle. The daemon also drives the camera back to `level` at startup,
+   which is what stops it from staring at the ceiling after a reboot.
+   Save it once with `installer/verify.py <ip> --level x,y`.
+   A camera whose tilt axis is mounted the other way round can be corrected per
+   camera with `tilt_sign=-1` in `/etc/config/lsc_onvif.conf`.
 
 5. **Tilt conventions are unusual.**
    `y = 0` is not the middle of the range and the sign is inverted relative to what

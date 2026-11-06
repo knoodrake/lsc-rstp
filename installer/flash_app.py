@@ -175,8 +175,40 @@ def transfer(local_file, cam_ip, port=9999, timeout=300.0, chunk=32768, sleep=0.
         n, dt = _send_file(cam_ip, port, local_file, chunk, sleep)
     except Exception as e:               # noqa: BLE001 - on veut le diagnostic
         err = f"{type(e).__name__}: {e}"
+    # L'accusé de réception du shell de la caméra est parfois perdu (le WiFi des
+    # LSC laisse tomber la session en fin de gros transfert) : on vérifie le md5
+    # dans une session neuve et on n'attend pas le sentinelle plus longtemps.
+    want_md5 = md5_file(local_file)
+    verified = None
+    if err == "":
+        for attempt in range(4):
+            time.sleep(2.0 if attempt == 0 else 3.0)
+            try:
+                _, chk = cam("md5sum /tmp/usr.sqsh4.new 2>/dev/null | awk '{print $1}'; echo CHK_DONE",
+                             "CHK_DONE", 30)
+            except OSError:
+                continue
+            line = [ln.strip() for ln in chk.splitlines() if len(ln.strip()) == 32]
+            if line and line[-1] == want_md5:
+                verified = want_md5
+                break
+            if line:
+                break
+    if verified:
+        try:
+            p.kill()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            p.communicate(timeout=5)
+        except Exception:  # noqa: BLE001
+            pass
+        print(f"transfert : {n} o en {dt:.1f} s ({n / max(dt, 0.001) / 1e6:.2f} Mo/s)"
+              f"{' — ' + err if err else ''}")
+        print(f"md5 côté caméra : {{'usr.sqsh4.new': '{verified}'}}")
+        return {"usr.sqsh4.new": verified}, "", ""
     try:
-        out, _ = p.communicate(timeout=timeout + 15)
+        out, _ = p.communicate(timeout=60)
     except subprocess.TimeoutExpired:
         p.kill()
         out, _ = p.communicate()
