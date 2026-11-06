@@ -8,7 +8,8 @@ vendored into this repository, except where noted.
 | **uClibc** | LGPL-2.1 | statically linked into the prebuilt ARM binaries in `bin/` and `layer/sbin/`. Binaries are provided as a convenience; the full corresponding source of our code is in `src/`, and the uClibc build recipe is documented there. |
 | **squashfs-tools** (`mksquashfs`, `unsquashfs`) | GPL-2.0 | host-side build tool, called as a subprocess. Not redistributed. |
 | **busybox** | GPL-2.0 | already present on the camera (vendor firmware); we call its `telnetd`, `awk`, `sed`. Not redistributed. |
-| **hostapd** | BSD-3-Clause | optional AP provisioning (see `docs/en/install-ap.md`); built from upstream source by the user, not redistributed here. |
+| **hostapd** 2.11 | BSD-3-Clause | optional AP provisioning. A prebuilt ARMv5/uClibc binary is redistributed in `ap-mode/out/hostapd` for convenience; `ap-mode/build.sh` rebuilds it from the untouched upstream release (`w1.fi`), and the licence text ships with that release. |
+| **libnl 3.11** | LGPL-2.1 | linked *statically* into `ap-mode/out/hostapd` (nl80211 driver support). Rebuildable with `ap-mode/build.sh`; upstream at `github.com/thom311/libnl`. |
 | **Frigate** | MIT | not part of this project: it is a client of the camera. Referenced in the docs only. |
 | **Python standard library** | PSF-2.0 | all installer scripts use stdlib only. |
 

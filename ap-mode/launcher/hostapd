@@ -1,0 +1,14 @@
+#!/bin/sh
+# Enveloppe de compatibilite hostapd pour les scripts usine des cameras LSC.
+#
+#   Le script usine (`/usr/sbin/wifi_driver_rtl8188.sh ap`) lance :
+#       /tmp/hostapd /etc/config/hostapd.conf -B
+#   mais hostapd >= 2.7 n'a plus d'option -B (il la prend pour le fichier de
+#   configuration et echoue : "Could not open configuration file '-B'").
+#
+# Cette enveloppe retire -B puis exec le vrai binaire. Pose-la en /tmp/hostapd,
+# le binaire en /tmp/hostapd.bin (ou adapte REAL ci-dessous).
+REAL=/tmp/hostapd.bin
+[ -x "$REAL" ] || REAL=/mnt/hostapd.bin
+set -- $(for a in "$@"; do [ "$a" = "-B" ] || printf '%s ' "$a"; done)
+exec "$REAL" "$@" >> /tmp/hostapd.out 2>&1
