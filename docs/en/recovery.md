@@ -68,7 +68,7 @@ Before flashing anything, keep a copy of the camera's **original** application
 partition:
 
 ```bash
-python3 installer/dump_app.py --cam 192.168.3.74 --out backup_mtd7.bin
+python3 installer/dump_app.py --cam 192.168.1.50 --out backup_mtd7.bin
 ```
 
 That file is your way back to factory: put it in a tar named `update.tar` at the

@@ -7,6 +7,13 @@ PTZ including **autotracking**.
 
 *Read this in: **English** · [Français](README.fr.md)*
 
+> **How this was written — AI-assisted, 100 % local.** The code, the documentation and the
+> reverse-engineering work in this repository were produced in pair-programming with a
+> **local AI agent** (a DeepSeek model running on the maintainer's own machine: no cloud AI
+> service, no source code sent to a third party). Every claim in the status table below was
+> measured on physical cameras; anything unverified is explicitly marked as such. Review the
+> code before trusting it on your own hardware.
+
 > **Status: early preview (v0.1).** Everything below was developed and verified on
 > **three physical cameras**. The camera-side software is proven; the *one-command
 > installer* is still being packaged. See the [status matrix](#status--what-is-proven).
@@ -160,6 +167,26 @@ Not affiliated with Tuya, Anyka or LSC. Use at your own risk.
 | Limitations | [docs/en/limitations.md](docs/en/limitations.md) |
 | Troubleshooting | [docs/en/troubleshooting.md](docs/en/troubleshooting.md) |
 | FAQ | [docs/en/faq.md](docs/en/faq.md) |
+
+## Credits
+
+This work stands on the shoulders of these projects (none of them is affiliated with this
+repository, and none of their authors endorses it):
+
+| Project | Licence | What it gave us |
+|---|---|---|
+| **hostapd** / **wpa_supplicant** (Jouni Malinen & contributors) | BSD-3-Clause | access-point provisioning; our ARMv5 build and the `-B` compatibility wrapper live in [`ap-mode/`](ap-mode/README.md) |
+| **libnl** | LGPL-2.1 | linked statically into that hostapd build, for the `nl80211` driver |
+| **uClibc** | LGPL-2.1 | the cameras' C library; our ARM binaries link against it |
+| **busybox** | GPL-2.0 | already on the camera; the layer drives its `telnetd`, `sed`, `awk` |
+| **squashfs-tools** | GPL-2.0 | host-side `mksquashfs`, used to build the application image |
+| **Frigate** / **go2rtc** | MIT / MIT | the NVR that consumes the streams and drives ONVIF PTZ; reading its ONVIF client is what made autotracking work |
+| **ONVIF** | specification | the open interface this daemon implements (a small, measured subset) |
+| **Anyka · LSC** | vendor firmware | the platform and firmware this runs on; no vendor code is redistributed (see [THIRD_PARTY.md](THIRD_PARTY.md)) |
+| **DeepSeek model family** | — | the local LLM used as the pair-programming assistant described at the top of this file |
+
+If you believe your project deserves different wording or an explicit citation, please open
+an issue — it will be corrected.
 
 ## Contributing
 

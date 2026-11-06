@@ -7,6 +7,13 @@ fonctionnel, sans cloud Tuya, sans appli vendeur, sans compte. Conçu pour que
 
 *Lire en : [English](README.md) · **Français***
 
+> **Comment ceci a été écrit — assisté par IA, 100 % local.** Le code, la documentation et le
+> travail de rétro-ingénierie de ce dépôt ont été produits en binôme avec un **agent IA
+> local** (un modèle DeepSeek tournant sur la machine de l'auteur : aucun service d'IA dans
+> le cloud, aucun code envoyé à un tiers). Chaque affirmation du tableau d'état ci-dessous a
+> été mesurée sur des caméras physiques ; ce qui n'est pas vérifié est explicitement signalé.
+> Relisez le code avant de le faire tourner sur votre matériel.
+
 > **Statut : preview v0.1.** Tout ce qui suit a été développé et vérifié sur **trois
 > caméras physiques**. Le logiciel embarqué côté caméra est prouvé ; l'*installeur en
 > une commande* est en cours de conditionnement. Voir la
@@ -154,6 +161,26 @@ Toute la documentation est en anglais : [docs/en/](docs/en/). Points d'entrée :
 [limites](docs/en/limitations.md) ·
 [retour arrière](docs/en/rollback.md) ·
 [Frigate](docs/en/frigate.md).
+
+## Crédits
+
+Ce travail s'appuie sur ces projets (aucun n'est affilié à ce dépôt, aucun de leurs auteurs
+ne l'endosse) :
+
+| Projet | Licence | Ce qu'il a apporté |
+|---|---|---|
+| **hostapd** / **wpa_supplicant** (Jouni Malinen et contributeurs) | BSD-3-Clause | le provisioning en point d'accès ; notre build ARMv5 et l'enveloppe de compatibilité `-B` sont dans [`ap-mode/`](ap-mode/README.md) |
+| **libnl** | LGPL-2.1 | lié statiquement dans ce build hostapd, pour le pilote `nl80211` |
+| **uClibc** | LGPL-2.1 | la libc des caméras ; nos binaires ARM sont liés contre elle |
+| **busybox** | GPL-2.0 | déjà sur la caméra ; la couche pilote ses `telnetd`, `sed`, `awk` |
+| **squashfs-tools** | GPL-2.0 | `mksquashfs` côté PC, pour construire l'image applicative |
+| **Frigate** / **go2rtc** | MIT / MIT | le NVR qui consomme les flux et pilote le PTZ ONVIF ; la lecture de son client ONVIF est ce qui a rendu l'autotracking possible |
+| **ONVIF** | spécification | l'interface ouverte que ce démon implémente (un sous-ensemble mesuré) |
+| **Anyka · LSC** | firmware vendeur | la plateforme et le firmware ; aucun code vendeur n'est redistribué (cf. [THIRD_PARTY.md](THIRD_PARTY.md)) |
+| **Famille de modèles DeepSeek** | — | le LLM local utilisé comme assistant, décrit en haut de ce fichier |
+
+Si vous estimez que votre projet mérite une autre formulation ou une citation explicite,
+ouvrez une issue — ce sera corrigé.
 
 ## Contribuer
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Push this repository to GitHub.
 #
-#   ./publish.sh                      # pushes to git@github.com:<OWNER>/<NAME>.git
+#   ./publish.sh                      # pushes to git@github.com:knoodrake/lsc-rstp.git
 #   OWNER=me NAME=my-cam ./publish.sh
 #
 # The remote repository must exist (GitHub does not create repositories from a
@@ -13,7 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-OWNER="${OWNER:-LocalActionTuyaCams}"
+OWNER="${OWNER:-knoodrake}"
 NAME="${NAME:-lsc-rstp}"
 REMOTE="${REMOTE:-git@github.com:$OWNER/$NAME.git}"
 

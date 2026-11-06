@@ -11,13 +11,14 @@ Usage:
 """
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PATTERNS = [
     ("wifi name",        re.compile(r"Livebox|SFR_|Freebox|Orange-|Bbox-|_2\.4G|_5G\b")),
-    ("wifi passphrase",  re.compile(r"YOUR_WIFI_PASSWORD|passphrase=[A-Za-z0-9!@#%^&*_\-]{8,}")),
+    ("wifi passphrase",  re.compile(r"^\s*passphrase\s*=\s*\S{8,}", re.M)),
     # 192.168.1.50 / .1.1 are the documentation examples: only flag other ranges
     ("private LAN IP",   re.compile(r"\b192\.168\.(?!1\.(?:50|1)\b)\d{1,3}\.\d{1,3}\b")),
     ("MAC address",      re.compile(r"\b([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b")),
@@ -34,7 +35,25 @@ TEXT_EXT = {".md", ".py", ".sh", ".c", ".h", ".s", ".S", ".txt", ".yaml", ".yml"
             ".ini", ".tmpl", ".json", ".cfg"}
 
 
+def _tracked():
+    """Files git tracks (falls back to a plain walk outside a checkout)."""
+    try:
+        out = subprocess.run(["git", "-C", ROOT, "ls-files"], capture_output=True,
+                             text=True, check=True).stdout
+        return [os.path.join(ROOT, p) for p in out.splitlines() if p]
+    except Exception:
+        return None
+
+
 def walk():
+    tracked = _tracked()
+    if tracked is not None:
+        for path in tracked:
+            if os.path.basename(path) in SKIP_FILES:
+                continue
+            if os.path.splitext(path)[1].lower() in TEXT_EXT:
+                yield path
+        return
     for d, dirs, files in os.walk(ROOT):
         dirs[:] = [x for x in dirs if x not in SKIP_DIRS]
         for f in files:
@@ -54,10 +73,15 @@ def main():
             text = open(path, encoding="utf-8", errors="replace").read()
         except Exception:
             continue
+        rel = os.path.relpath(path, ROOT)
         for name, pat in PATTERNS:
+            # publish.sh legitimately names the target repository
+            if name in ("e-mail", "hostname") and rel == "publish.sh":
+                continue
             for n, line in enumerate(text.splitlines(), 1):
+                line = re.sub(r"\{\{[^}]*\}\}", " ", line)   # {{PLACEHOLDER}} = safe
                 if pat.search(line):
-                    hits.append((os.path.relpath(path, ROOT), n, name, line.strip()[:110]))
+                    hits.append((rel, n, name, line.strip()[:110]))
     print("scanned %d text files" % scanned)
     if not hits:
         print("no personal data pattern found — OK to publish")
