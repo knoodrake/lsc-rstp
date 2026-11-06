@@ -132,7 +132,7 @@ python3 tests/validate_cam.py <cam-ip> 8080
 ## Safety & rollback
 
 Nothing is irreversible as long as you keep the original `APP` partition: the installer
-dumps it before touching anything, and `docs/en/rollback.md` explains how to restore a
+dumps it before touching anything, and `docs/en/recovery.md` explains the camera's own SD recovery, `docs/en/rollback.md` explains how to restore a
 stock camera. Worst case on these units is a reflash over telnet, which we have done
 dozens of times. **Warranty: void.** Your call.
 
@@ -155,6 +155,7 @@ Not affiliated with Tuya, Anyka or LSC. Use at your own risk.
 | Requirements | [docs/en/requirements.md](docs/en/requirements.md) |
 | Architecture | [docs/en/architecture.md](docs/en/architecture.md) |
 | Frigate | [docs/en/frigate.md](docs/en/frigate.md) |
+| Recovery (SD, no tools) | [docs/en/recovery.md](docs/en/recovery.md) |
 | Rollback | [docs/en/rollback.md](docs/en/rollback.md) |
 | Limitations | [docs/en/limitations.md](docs/en/limitations.md) |
 | Troubleshooting | [docs/en/troubleshooting.md](docs/en/troubleshooting.md) |

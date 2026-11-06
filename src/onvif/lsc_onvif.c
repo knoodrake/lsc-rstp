@@ -117,6 +117,11 @@ int __isoc23_sscanf(const char *s, const char *fmt, ...)
  * TILT_SPAN = 2048 unites brutes par 1.0 generique (=> +-0.5 utile, dans +-1). */
 #define TILT_ZERO     1024
 #define TILT_SPAN     2048.0
+
+/* Certaines cameras ont l'axe tilt mecaniquement inverse (montage different) :
+ * y>0 doit toujours faire MONTER l'image (convention ONVIF/Frigate), donc on
+ * rend le signe reglable par camera via tilt_sign dans la conf. */
+static double g_tilt_sign = TILT_SIGN;
 #define CHUNK_STEPS   300
 #define CHUNK_MS      400
 #define DEADZONE      0.05
@@ -1182,7 +1187,7 @@ static int h_ptz_status(sb *s, const struct reqinfo *ri)
     if (g_moving) move = "MOVING";
 
     fmt4(xs, sizeof xs, (double)(pan - CENTER) / (double)CENTER);
-    fmt4(ys, sizeof ys, (TILT_SIGN * (double)(tilt - g_tilt_ref)) / TILT_SPAN);
+    fmt4(ys, sizeof ys, (g_tilt_sign * (double)(tilt - g_tilt_ref)) / TILT_SPAN);
 
     soap_begin(s, ri);
     sb_add(s, "<tptz:GetStatusResponse><tt:PTZStatus><tt:Position>");
@@ -1247,7 +1252,7 @@ static int h_continuous_move(sb *s, const struct reqinfo *ri)
     if (pantilt_xy(ri->raw, "Velocity", &x, &y) != 0)
         pantilt_xy(ri->raw, "Translation", &x, &y);
     goto_cancel();
-    motor_set(x, TILT_SIGN * y);
+    motor_set(x, g_tilt_sign * y);
     logmsg("ContinuousMove x=%.3f y=%.3f", x, y);
     simple_reply(s, ri, "<tptz:ContinuousMoveResponse/>", NULL);
     return 0;
@@ -1263,7 +1268,7 @@ static int h_relative_move(sb *s, const struct reqinfo *ri)
         return 1;
     }
     tp = cp + my_round(x * (double)CENTER);
-    tt = ct + my_round(TILT_SIGN * y * TILT_SPAN);
+    tt = ct + my_round(g_tilt_sign * y * TILT_SPAN);
     goto_cancel();
     goto_start(tp, tt);
     logmsg("RelativeMove x=%.3f y=%.3f -> target %d,%d", x, y, tp, tt);
@@ -1948,6 +1953,7 @@ static void load_config(void)
         else if (!strcmp(line, "ptzd_port"))  g_ptzd_port = atoi(eq + 1);
         else if (!strcmp(line, "iface"))    { snprintf(g_iface, sizeof g_iface, "%s", eq + 1); g_iface_set = 1; }
         else if (!strcmp(line, "ip"))         snprintf(g_ip, sizeof g_ip, "%s", eq + 1);
+        else if (!strcmp(line, "tilt_sign"))  g_tilt_sign = (atof(eq + 1) < 0) ? -1.0 : 1.0;
     }
     fclose(f);
 }
@@ -2001,11 +2007,18 @@ int main(int argc, char **argv)
     signal(SIGTERM, on_signal);
     signal(SIGINT, on_signal);
 
-    logmsg(APP_NAME " " APP_VER " starting: ip=%s port=%d ptzd=127.0.0.1:%d fw=%s serial=%s",
-           g_ip, g_port, g_ptzd_port, g_fwver, g_serial);
+    logmsg(APP_NAME " " APP_VER " starting: ip=%s port=%d ptzd=127.0.0.1:%d fw=%s serial=%s tilt_sign=%+.0f",
+           g_ip, g_port, g_ptzd_port, g_fwver, g_serial, g_tilt_sign);
 
     probe_streams();
     ptz_connect();
+    /* Au boot la camera reste souvent en position repliee : on la remet sur sa
+     * vue de veille si elle a ete enregistree, sinon elle regarde le plafond. */
+    { struct preset *pl = preset_find("level");
+      if (pl && pl->tilt > 0) {
+          logmsg("boot: retour au preset level (%d,%d)", pl->pan, pl->tilt);
+          goto_preset_by_name("level");
+      } }
     logmsg("ptzd: %s", g_ptz_fd >= 0 ? "connecté" : "indisponible (retry à la demande)");
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);

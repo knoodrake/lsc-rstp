@@ -73,7 +73,8 @@ echo "=== DONE $(date +%s) ==="
 
 def detect_port(ip, prefer=None):
     """Port telnet de la caméra : 23 (FW baké/Tuya) ou 24 (hack SD card-free)."""
-    for port in ([prefer] if prefer else []) + [23, 24]:
+    # :24 is the LSC shell (no login prompt); :23 can be the vendor login telnetd.
+    for port in ([prefer] if prefer else []) + [24, 23]:
         try:
             socket.create_connection((ip, port), timeout=2).close()
             os.environ["CAM_PORT"] = str(port)
