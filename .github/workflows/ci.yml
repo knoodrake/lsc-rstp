@@ -15,7 +15,7 @@ jobs:
 
       - name: python syntax
         run: |
-          python3 -m compileall -q installer tests patchers || exit 1
+          python3 -m compileall -q installer tests patchers ap-mode || exit 1
 
       - name: CLIs expose --help
         run: |
