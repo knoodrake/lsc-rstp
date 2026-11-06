@@ -186,9 +186,9 @@ static const char PAGE_FORM[] =
     "<label>Mot de passe WiFi</label>"
     "<input name='passphrase' type='password' minlength='8' maxlength='63' required>"
     "<label>Adresse IP fixe (optionnel)</label>"
-    "<input name='ip' placeholder='192.168.3.50' value='%s'>"
+    "<input name='ip' placeholder='192.168.1.50' value='%s'>"
     "<label>Masque (optionnel)</label><input name='netmask' placeholder='255.255.255.0' value='%s'>"
-    "<label>Passerelle (optionnel)</label><input name='gateway' placeholder='192.168.3.1' value='%s'>"
+    "<label>Passerelle (optionnel)</label><input name='gateway' placeholder='192.168.1.1' value='%s'>"
     "<button type='submit'>Enregistrer et red&eacute;marrer</button></form>"
     "<p class='sub' style='margin-top:1.2rem'>Laissez le r&eacute;seau vide pour une IP par DHCP "
     "(si DHCP indisponible, l'IP du dernier INI est conserv&eacute;e).</p>"
@@ -263,7 +263,7 @@ static void page_form(int fd, const char *ssid, const char *ip, const char *nm, 
 
 static int do_reboot(void)
 {
-    if (getenv("APWEB_NO_REBOOT")) {   /* test hôte : ne jamais rebooter the host */
+    if (getenv("APWEB_NO_REBOOT")) {   /* host build: never reboot the host */
         fprintf(stderr, "[apweb] (APWEB_NO_REBOOT) reboot simule\n");
         return 0;
     }
