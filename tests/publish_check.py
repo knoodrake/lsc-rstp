@@ -80,6 +80,8 @@ def main():
                 continue
             for n, line in enumerate(text.splitlines(), 1):
                 line = re.sub(r"\{\{[^}]*\}\}", " ", line)   # {{PLACEHOLDER}} = safe
+                # the repository's own URLs legitimately contain the owner name
+                line = re.sub(r"https?://github\.com/knoodrake/[^\s)\"\']*", " ", line)
                 if pat.search(line):
                     hits.append((rel, n, name, line.strip()[:110]))
     print("scanned %d text files" % scanned)
