@@ -1,0 +1,36 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: python syntax
+        run: |
+          python3 -m compileall -q installer tests patchers || exit 1
+
+      - name: CLIs expose --help
+        run: |
+          for f in installer/install.py installer/verify.py installer/sd_card.py \
+                   installer/dump_app.py installer/build_app.py installer/flash_app.py; do
+            echo "== $f"; python3 "$f" --help > /dev/null || exit 1
+          done
+
+      - name: layer checksums
+        run: |
+          cd layer && md5sum -c MD5SUMS
+
+      - name: no personal data in the tree
+        run: python3 tests/publish_check.py
+
+      - name: shell syntax
+        run: |
+          for f in $(git ls-files '*.sh'); do bash -n "$f" || exit 1; done
